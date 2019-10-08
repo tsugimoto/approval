@@ -27,6 +27,10 @@ module Approval
       send("exec_#{event}")
     end
 
+    def after_apply
+      exec_after_perform if event == "perform"
+    end
+
     private
 
       def exec_create
@@ -54,6 +58,16 @@ module Approval
           resource_model.perform(params)
         else
           resource_model.perform
+        end
+      end
+
+      def exec_after_perform
+        return unless resource_model.respond_to?(:after_perform)
+
+        if resource_model.method(:after_perform).arity > 0
+          resource_model.after_perform(params)
+        else
+          resource_model.after_perform
         end
       end
 

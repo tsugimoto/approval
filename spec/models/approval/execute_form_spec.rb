@@ -55,6 +55,43 @@ RSpec.describe Approval::ExecuteForm, type: :model do
       it { expect { subject }.to change { ::Approval::Comment.count }.by(2) }
       it { expect { subject }.to change { request.state }.from("approved").to("executed") }
     end
+
+
+    context "when invalid perform" do
+      let(:user) { create :user }
+      let(:reason) { "" }
+      let(:request) do
+        build(:request, :pending, request_user: user).tap do |request|
+          request.comments << build(:comment, user: request.request_user)
+          request.items << build(:item, :perform)
+          request.save!
+        end
+      end
+
+      it "does not execute perform and after_perform" do
+        expect(Book).to receive(:perform).never
+        expect(Book).to receive(:after_perform).never
+        expect(form.save).to eq false
+      end
+    end
+
+    context "when valid perform" do
+      let(:user) { create :user }
+      let(:reason) { "reason" }
+      let(:request) do
+        build(:request, :approved, request_user: user).tap do |request|
+          request.comments << build(:comment, user: request.request_user)
+          request.items << build(:item, :perform)
+          request.save!
+        end
+      end
+
+      it "executes perform and after_perform" do
+        expect(Book).to receive(:perform).once
+        expect(Book).to receive(:after_perform).once
+        form.save
+      end
+    end
   end
 
   describe "#save!" do
@@ -86,6 +123,42 @@ RSpec.describe Approval::ExecuteForm, type: :model do
       it { expect { form.save }.to change { Book.count }.by(1) }
       it { expect { form.save }.to change { ::Approval::Comment.count }.by(2) }
       it { expect { form.save }.to change { request.state }.from("approved").to("executed") }
+    end
+
+    context "when invalid perform" do
+      let(:user) { create :user }
+      let(:reason) { "" }
+      let(:request) do
+        build(:request, :pending, request_user: user).tap do |request|
+          request.comments << build(:comment, user: request.request_user)
+          request.items << build(:item, :perform)
+          request.save!
+        end
+      end
+
+      it "does not execute perform and after_perform" do
+        expect(Book).to receive(:perform).never
+        expect(Book).to receive(:after_perform).never
+        expect { form.save! }.to raise_error(::ActiveRecord::RecordInvalid)
+      end
+    end
+
+    context "when valid perform" do
+      let(:user) { create :user }
+      let(:reason) { "reason" }
+      let(:request) do
+        build(:request, :approved, request_user: user).tap do |request|
+          request.comments << build(:comment, user: request.request_user)
+          request.items << build(:item, :perform)
+          request.save!
+        end
+      end
+
+      it "executes perform and after_perform" do
+        expect(Book).to receive(:perform).once
+        expect(Book).to receive(:after_perform).once
+        form.save!
+      end
     end
   end
 end
