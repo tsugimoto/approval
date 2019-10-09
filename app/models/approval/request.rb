@@ -29,7 +29,7 @@ module Approval
     end
 
     after_commit(on: :update) do
-      if self.previous_changes["state"][0] != "executed" && self.previous_changes["state"][1] == "executed"
+      if state_previously_changed? && executed?
         items.each(&:after_apply)
       end
     end
