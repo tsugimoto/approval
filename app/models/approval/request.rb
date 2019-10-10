@@ -28,6 +28,12 @@ module Approval
       self.requested_at = Time.current
     end
 
+    after_commit(on: :update) do
+      if state_previously_changed? && executed?
+        items.each(&:after_apply)
+      end
+    end
+
     def execute
       self.state = :executed
       self.executed_at = Time.current
